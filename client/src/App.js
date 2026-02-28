@@ -3,8 +3,12 @@ import "./App.css";
 
 function App() {
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>AI Code Reviewer</h1>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>AI Code Reviewer</h1>
+        <p>Powered by Google Gemini</p>
+      </header>
+
       <CodeEditor />
     </div>
   );
