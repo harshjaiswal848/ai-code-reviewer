@@ -63,6 +63,7 @@ function App() {
       <div className="card">
         <div className="glow-title">
           <h1>AI Code Reviewer</h1>
+          <h3>Developed by Harsh Jaiswal & Krishna Garg</h3>
 
           <div className="theme-buttons">
             <button onClick={() => setTheme("dark")}>🌙</button>
