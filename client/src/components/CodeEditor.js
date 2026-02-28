@@ -30,7 +30,7 @@ function CodeEditor() {
           theme="dark"
           onChange={(value) => setCode(value)}
         />
-        <button className="review-btn" onClick={reviewCode}>
+        <button className="btn" onClick={reviewCode}>
           {loading ? "Reviewing..." : "Review Code"}
         </button>
       </div>
