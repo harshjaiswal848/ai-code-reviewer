@@ -1,26 +1,35 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 exports.reviewCode = async (req, res) => {
   try {
     const { code } = req.body;
 
     if (!code) {
-      return res.json({ feedback: "No code provided" });
+      return res.json({ feedback: "No code provided." });
     }
 
-    // Fake AI response for demo
-    res.json({
-      feedback: `
-AI Code Review:
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest"
+    });
 
-✔ Syntax looks correct
-✔ Try better variable naming
-✔ Add comments for readability
-✔ Optimize loops if possible
- 
-`
+    const result = await model.generateContent(
+      `You are a professional code reviewer.
+      Review the following code, find bugs, errors, and suggest improvements:
+
+      ${code}`
+    );
+
+    res.json({
+      feedback: result.response.text()
     });
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ feedback: "Backend error" });
+    console.log("Gemini Error:", error.message);
+
+    res.json({
+      feedback: "Error connecting to Gemini AI"
+    });
   }
 };
