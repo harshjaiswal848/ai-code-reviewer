@@ -147,3 +147,28 @@ body {
 .theme-buttons button:hover {
   transform: scale(1.05);
 }
+/* Glow Title */
+.glow-title {
+  transition: 0.3s;
+}
+
+.glow-title:hover {
+  text-shadow:
+    0 0 10px #22c55e,
+    0 0 20px #22c55e,
+    0 0 40px #22c55e;
+}
+/* Glow Button */
+.glow-btn {
+  position: relative;
+  overflow: hidden;
+  transition: 0.3s;
+}
+
+.glow-btn:hover {
+  box-shadow:
+    0 0 12px #6366f1,
+    0 0 30px #3b82f6,
+    0 0 50px #3b82f6;
+  transform: scale(1.05);
+}

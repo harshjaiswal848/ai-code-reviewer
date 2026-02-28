@@ -61,7 +61,7 @@ function App() {
       <canvas ref={canvasRef} id="bgCanvas"></canvas>
 
       <div className="card">
-        <div className="header">
+        <div className="glow-title">
           <h1>AI Code Reviewer</h1>
 
           <div className="theme-buttons">
