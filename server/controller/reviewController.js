@@ -11,7 +11,7 @@ exports.reviewCode = async (req, res) => {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest"
+      model: "gemini-2.5-flash-lite"
     });
 
     const result = await model.generateContent(
@@ -27,7 +27,6 @@ exports.reviewCode = async (req, res) => {
 
   } catch (error) {
     console.log("Gemini Error:", error.message);
-
     res.json({
       feedback: "Error connecting to Gemini AI"
     });
