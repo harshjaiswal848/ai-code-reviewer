@@ -1,50 +1,265 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
-function ReviewResult({ result }) {
+/* ─── helpers ─────────────────────────────────────── */
+
+// Parse inline-comment markers like: // [LINE:5] message
+// OR extract numbered list items as line comments
+function parseLineComments(text) {
+  const comments = {};
+  const lineTagRe = /\[LINE:(\d+)\]\s*(.+)/g;
+  let m;
+  while ((m = lineTagRe.exec(text)) !== null) {
+    const ln = parseInt(m[1]);
+    comments[ln] = (comments[ln] ? comments[ln] + " | " : "") + m[2].trim();
+  }
+  return comments;
+}
+
+// Extract fixed code block from AI response
+function extractFixedCode(text) {
+  const fence = text.match(/```[\w]*\n([\s\S]*?)```/);
+  if (fence) return fence[1];
+  // fallback: look for "Fixed Code:" or "Corrected Code:" section
+  const section = text.match(/(?:Fixed|Corrected)\s+Code:\s*\n([\s\S]+)/i);
+  if (section) return section[1].trim();
+  return null;
+}
+
+// Simple diff: returns array of { type: 'same'|'add'|'remove', line }
+function computeDiff(original, fixed) {
+  const a = original.split("\n");
+  const b = fixed.split("\n");
+  const result = [];
+  const maxLen = Math.max(a.length, b.length);
+  for (let i = 0; i < maxLen; i++) {
+    const lineA = a[i];
+    const lineB = b[i];
+    if (lineA === undefined) {
+      result.push({ type: "add", line: lineB, num: i + 1 });
+    } else if (lineB === undefined) {
+      result.push({ type: "remove", line: lineA, num: i + 1 });
+    } else if (lineA === lineB) {
+      result.push({ type: "same", line: lineA, num: i + 1 });
+    } else {
+      result.push({ type: "remove", line: lineA, num: i + 1 });
+      result.push({ type: "add", line: lineB, num: i + 1 });
+    }
+  }
+  return result;
+}
+
+// Render markdown-like syntax: **bold**, `code`, ## heading, - bullet
+function renderFormatted(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements = [];
+  let i = 0;
+
+  const applyInline = (str, key) => {
+    const parts = [];
+    let remaining = str;
+    let idx = 0;
+    const re = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+    let match;
+    let last = 0;
+    while ((match = re.exec(remaining)) !== null) {
+      if (match.index > last) parts.push(remaining.slice(last, match.index));
+      const raw = match[0];
+      if (raw.startsWith("`")) {
+        parts.push(<code key={idx++} className="inline-code">{raw.slice(1, -1)}</code>);
+      } else {
+        parts.push(<strong key={idx++}>{raw.slice(2, -2)}</strong>);
+      }
+      last = match.index + raw.length;
+    }
+    if (last < remaining.length) parts.push(remaining.slice(last));
+    return <span key={key}>{parts}</span>;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^#{1,3}\s/.test(line)) {
+      elements.push(<div key={i} className="fmt-heading">{line.replace(/^#+\s/, "")}</div>);
+    } else if (/^\s*[-*]\s/.test(line)) {
+      elements.push(<div key={i} className="fmt-bullet">• {applyInline(line.replace(/^\s*[-*]\s/, ""), i)}</div>);
+    } else if (/^\d+\.\s/.test(line)) {
+      elements.push(<div key={i} className="fmt-numbered">{applyInline(line, i)}</div>);
+    } else if (line.trim() === "") {
+      elements.push(<div key={i} className="fmt-spacer" />);
+    } else {
+      elements.push(<div key={i} className="fmt-line">{applyInline(line, i)}</div>);
+    }
+    i++;
+  }
+  return elements;
+}
+
+/* ─── PDF export ──────────────────────────────────── */
+function downloadPDF(result, language, mode) {
+  const win = window.open("", "_blank");
+  if (!win) return;
+  const escaped = result
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>AI Code Review — ${language}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600;700&display=swap');
+  body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; padding: 48px; max-width: 860px; margin: auto; }
+  h1 { font-size: 26px; color: #6366f1; margin-bottom: 4px; }
+  .meta { color: #64748b; font-size: 13px; margin-bottom: 32px; }
+  pre { background: #f1f5f9; border-radius: 8px; padding: 20px; font-family: 'Fira Code', monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; border-left: 4px solid #6366f1; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; background: #e0e7ff; color: #4338ca; font-size: 12px; font-weight: 600; margin-left: 10px; }
+  footer { margin-top: 48px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+</style>
+</head>
+<body>
+<h1>AI Code Review Report <span class="badge">${mode.toUpperCase()}</span></h1>
+<p class="meta">Language: <strong>${language}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+<pre>${escaped}</pre>
+<footer>Generated by AI Code Reviewer &nbsp;·&nbsp; Developed by Harsh Jaiswal &amp; Krishna Garg</footer>
+</body>
+</html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 600);
+}
+
+/* ─── Main Component ──────────────────────────────── */
+function ReviewResult({ result, originalCode, fixedCode: fixedCodeProp, mode }) {
   const [score, setScore] = useState(0);
   const [confidence, setConfidence] = useState("");
+  const [tab, setTab] = useState("output"); // 'output' | 'diff'
+  const [lineComments, setLineComments] = useState({});
+  const [fixedCode, setFixedCode] = useState(null);
+  const [activeComment, setActiveComment] = useState(null);
+  const outputRef = useRef(null);
 
   useEffect(() => {
-    if (!result) return;
+    if (!result) { setScore(0); setConfidence(""); setLineComments({}); setFixedCode(null); return; }
 
     const scoreMatch = result.match(/Code Quality Score:\s*(\d+)/i);
     const confidenceMatch = result.match(/Confidence:\s*(\d+%?)/i);
-
     if (scoreMatch) setScore(parseInt(scoreMatch[1]) * 10);
     if (confidenceMatch) setConfidence(confidenceMatch[1]);
-  }, [result]);
 
-  const copyText = () => {
-    navigator.clipboard.writeText(result);
-  };
+    setLineComments(parseLineComments(result));
+
+    if (mode === "fix") {
+      const extracted = extractFixedCode(result);
+      setFixedCode(extracted);
+      if (extracted) setTab("diff");
+    } else {
+      setTab("output");
+      setFixedCode(null);
+    }
+  }, [result, mode]);
+
+  const copyText = () => navigator.clipboard.writeText(result);
+
+  const scoreColor = score >= 80 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
+
+  // Lines of original code for inline comment overlay
+  const codeLines = originalCode ? originalCode.split("\n") : [];
+  const diffLines = fixedCode && originalCode ? computeDiff(originalCode, fixedCode) : [];
 
   return (
-    <div className="output">
+    <div className="output" ref={outputRef}>
 
+      {/* ── Score Card ── */}
       {score > 0 && (
         <div className="score-card">
           <div className="score-header">
             <h3>Code Quality</h3>
-            <span>{score / 10}/10</span>
+            <span style={{ color: scoreColor, fontWeight: 700 }}>{score / 10}/10</span>
           </div>
-
           <div className="score-bar">
-            <div style={{ width: `${score}%` }}></div>
+            <div style={{ width: `${score}%`, background: `linear-gradient(90deg, ${scoreColor}, #3b82f6)` }}></div>
           </div>
-
           <p className="confidence">Confidence: {confidence}</p>
         </div>
       )}
 
-      {result && (
-        <button className="copy-btn" onClick={copyText}>
-          Copy Result
-        </button>
+      {/* ── Tab bar (only in fix mode when diff available) ── */}
+      {mode === "fix" && fixedCode && (
+        <div className="tab-bar">
+          <button className={`tab-btn ${tab === "output" ? "active" : ""}`} onClick={() => setTab("output")}>📄 AI Response</button>
+          <button className={`tab-btn ${tab === "diff" ? "active" : ""}`} onClick={() => setTab("diff")}>🔀 Diff View</button>
+          {codeLines.length > 0 && Object.keys(lineComments).length > 0 && (
+            <button className={`tab-btn ${tab === "inline" ? "active" : ""}`} onClick={() => setTab("inline")}>💬 Inline Comments</button>
+          )}
+        </div>
       )}
 
-      <pre className="output-text">
-        {result || "AI response will appear here..."}
-      </pre>
+      {/* ── Action Buttons ── */}
+      {result && (
+        <div className="result-actions">
+          <button className="copy-btn" onClick={copyText}>📋 Copy</button>
+          <button className="pdf-btn" onClick={() => downloadPDF(result, "JavaScript", mode)}>⬇ PDF</button>
+        </div>
+      )}
+
+      {/* ── TAB: AI Output (formatted) ── */}
+      {tab === "output" && (
+        <div className="formatted-output">
+          {result ? renderFormatted(result) : <span className="placeholder-text">AI response will appear here…</span>}
+        </div>
+      )}
+
+      {/* ── TAB: Diff View ── */}
+      {tab === "diff" && fixedCode && (
+        <div className="diff-view">
+          <div className="diff-legend">
+            <span className="diff-legend-add">+ Added</span>
+            <span className="diff-legend-remove">− Removed</span>
+            <span className="diff-legend-same">  Unchanged</span>
+          </div>
+          <div className="diff-lines">
+            {diffLines.map((dl, idx) => (
+              <div key={idx} className={`diff-line diff-${dl.type}`}>
+                <span className="diff-gutter">
+                  {dl.type === "add" ? "+" : dl.type === "remove" ? "−" : " "} {dl.num}
+                </span>
+                <code className="diff-code">{dl.line}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB: Inline Comments ── */}
+      {tab === "inline" && (
+        <div className="inline-view">
+          {codeLines.map((line, idx) => {
+            const lineNum = idx + 1;
+            const comment = lineComments[lineNum];
+            return (
+              <div key={idx} className={`inline-row ${comment ? "has-comment" : ""}`}>
+                <div className="inline-code-line">
+                  <span className="inline-gutter">{lineNum}</span>
+                  <code className="inline-code-text">{line || " "}</code>
+                  {comment && (
+                    <button
+                      className="inline-comment-dot"
+                      title={comment}
+                      onClick={() => setActiveComment(activeComment === lineNum ? null : lineNum)}
+                    >💬</button>
+                  )}
+                </div>
+                {comment && activeComment === lineNum && (
+                  <div className="inline-comment-bubble">{comment}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
     </div>
   );
 }

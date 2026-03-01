@@ -10,57 +10,103 @@ exports.reviewCode = async (req, res) => {
       return res.json({ feedback: "No code provided." });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-pro"
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    let instruction = "";
+    let prompt = "";
 
     if (mode === "fix") {
-      instruction = "Fix all errors and return corrected code.";
-    } 
-    else if (mode === "optimize") {
-      instruction = "Optimize this code for performance.";
-    } 
-    else if (mode === "explain") {
-      instruction = "Explain this code step by step.";
-    } 
-    else {
-      instruction = "Review this code and find bugs and improvements.";
-    }
+      prompt = `Fix all errors in the following ${language} code.
 
-    const prompt = `
-${instruction}
-
-Programming Language: ${language}
-
-IMPORTANT:
-Return response in this structured format:
+Return your response in this EXACT format:
 
 Errors:
-- list errors here
+- list each error found
 
-Suggestions:
-- list improvements here
+Fixed Code:
+\`\`\`${language.toLowerCase()}
+<paste the fully corrected code here>
+\`\`\`
 
-Code Quality Score: (give score out of 10)
+Explanation:
+- briefly explain each fix made
 
-Confidence: (give percentage)
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code to fix:
+${code}`;
+
+    } else if (mode === "optimize") {
+      prompt = `Optimize the following ${language} code for performance and readability.
+
+Return your response in this EXACT format:
+
+Optimizations Made:
+- list each optimization
+
+Optimized Code:
+\`\`\`${language.toLowerCase()}
+<paste the optimized code here>
+\`\`\`
+
+Explanation:
+- briefly explain the benefits
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code to optimize:
+${code}`;
+
+    } else if (mode === "explain") {
+      prompt = `Explain the following ${language} code step by step for a developer.
+
+Return your response in this format:
+
+## Overview
+Brief summary of what the code does.
+
+## Step-by-Step Explanation
+Explain each logical section.
+
+## Key Concepts
+List any important patterns or techniques used.
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
 
 Code:
-${code}
-`;
+${code}`;
+
+    } else {
+      // review mode — include line-by-line comments
+      prompt = `Review the following ${language} code and find bugs and improvements.
+
+Return your response in this EXACT format:
+
+## Errors
+- list each error with severity (Critical / Warning / Info)
+
+## Suggestions
+- list improvements
+
+## Line Comments
+For each specific line issue, add a tag like: [LINE:5] description of issue
+List at least 3–5 line-specific comments if applicable.
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code to review:
+${code}`;
+    }
 
     const result = await model.generateContent(prompt);
 
-    res.json({
-      feedback: result.response.text()
-    });
+    res.json({ feedback: result.response.text() });
 
   } catch (error) {
     console.log("Gemini Error:", error);
-    res.status(500).json({
-      feedback: "Error connecting to Gemini AI"
-    });
+    res.status(500).json({ feedback: "Error connecting to Gemini AI" });
   }
 };
