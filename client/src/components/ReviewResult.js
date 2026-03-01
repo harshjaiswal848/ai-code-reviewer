@@ -20,19 +20,26 @@ function ReviewResult({ result }) {
 
   return (
     <div className="output">
-      <div className="output-header">
-        <h3>AI Review</h3>
-        {result && <button onClick={copyText}>Copy</button>}
-      </div>
 
       {score > 0 && (
-        <div className="score-section">
-          <p>Code Quality Score</p>
+        <div className="score-card">
+          <div className="score-header">
+            <h3>Code Quality</h3>
+            <span>{score / 10}/10</span>
+          </div>
+
           <div className="score-bar">
             <div style={{ width: `${score}%` }}></div>
           </div>
-          <p>Confidence: {confidence}</p>
+
+          <p className="confidence">Confidence: {confidence}</p>
         </div>
+      )}
+
+      {result && (
+        <button className="copy-btn" onClick={copyText}>
+          Copy Result
+        </button>
       )}
 
       <pre className="output-text">

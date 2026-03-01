@@ -23,55 +23,72 @@ function App() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
     const letters = "01<>/{}[]()function const var let";
     const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops = Array(columns).fill(1);
 
     const draw = () => {
-      ctx.fillStyle = "rgba(0,0,0,0.06)";
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#22c55e"; // green hacker color
+      ctx.fillStyle = "#16a34a"; // softer green
       ctx.font = fontSize + "px monospace";
 
       for (let i = 0; i < drops.length; i++) {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.97)
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
+        }
 
         drops[i]++;
       }
     };
 
-    const interval = setInterval(draw, 35);
+    const interval = setInterval(draw, 40);
 
-    // cleanup when component rerenders
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("resize", resizeCanvas);
+    };
   }, []);
 
   return (
     <div className="page">
-      {/* Background canvas */}
+
+      {/* MATRIX BACKGROUND */}
       <canvas ref={canvasRef} id="bgCanvas"></canvas>
 
-      <div className="card">
-        <div className="glow-title">
-          <h1>AI Code Reviewer</h1>
-          <h3>Developed by Harsh Jaiswal & Krishna Garg</h3>
+      <div className="page-wrapper">
+
+        {/* HEADER */}
+        <div className="app-header">
+          <div className="header-left">
+            AI CODE REVIEWER <br></br>
+            Developed by Harsh Jaiswal & Krishna Garg
+          </div>
 
           <div className="theme-buttons">
             <button onClick={() => setTheme("dark")}>🌙</button>
-            <button onClick={() => setTheme("light")}>☀</button> 
+            <button onClick={() => setTheme("light")}>☀</button>
           </div>
         </div>
 
-        <CodeEditor />
+        {/* CENTERED DASHBOARD */}
+        <div className="dashboard">
+          <CodeEditor />
+        </div>
+
       </div>
     </div>
   );

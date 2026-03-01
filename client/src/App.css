@@ -200,31 +200,79 @@ body {
   margin-bottom: 10px;
 }
 
-.score-section {
-  margin: 15px 0;
+/* ---------- SCORE CARD ---------- */
+.score-card {
+  background: rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.score-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .score-bar {
-  height: 12px;
-  background: #1e293b;
+  height: 10px;
+  background: rgba(255,255,255,0.1);
   border-radius: 8px;
   overflow: hidden;
-  margin: 5px 0;
 }
 
 .score-bar div {
   height: 100%;
-  background: linear-gradient(90deg, #22c55e, #3b82f6);
+  background: linear-gradient(90deg,#22c55e,#3b82f6);
   transition: width 0.5s ease;
+}
+
+.confidence {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--subtext);
+}
+
+.copy-btn {
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+/* ---------- SMOOTH FADE IN ---------- */
+.editor-section,
+.result-section {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(10px); }
+  to { opacity:1; transform: translateY(0); }
 }
 .editor-section .cm-editor {
   resize: vertical;
   overflow: auto;
   min-height: 200px;
 }
+/* ---------- AI OUTPUT ---------- */
 .output {
-  height: 300px;
+  height: 420px;
   overflow: auto;
+  border-radius: 12px;
+  padding: 18px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* smooth scroll */
+.output::-webkit-scrollbar {
+  width: 8px;
+}
+
+.output::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
 }
 
 .main-content {
@@ -306,4 +354,255 @@ body {
   height: 100%;
   background: linear-gradient(90deg, #22c55e, #3b82f6);
   transition: width 0.5s ease;
+}
+
+
+/* ---------- GLOBAL CLEAN LOOK ---------- */
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* ---------- DASHBOARD LAYOUT ---------- */
+.main-content {
+  display: flex;
+  gap: 24px;
+  padding: 30px;
+  height: 82vh;
+}
+
+@media (max-width: 900px) {
+  .main-content {
+    flex-direction: column;
+    height: auto;
+  }
+}
+
+/* ---------- GLASS PANELS ---------- */
+.editor-section,
+.result-section {
+  flex: 1;
+  min-width: 420px;
+  display: flex;
+  flex-direction: column;
+
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+
+  transition: 0.3s;
+}
+
+.editor-section:hover,
+.result-section:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- HEADINGS ---------- */
+h2 {
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+/* ---------- CONTROLS ---------- */
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.controls select,
+.controls input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+/* ---------- EDITOR ---------- */
+.editor-wrapper {
+  height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* smooth button */
+.btn {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.25s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+/* ---------- PAGE WRAPPER ---------- */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- HEADER ---------- */
+.app-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* ---------- DASHBOARD CENTER ---------- */
+.dashboard {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.main-content {
+  display: flex;
+  gap: 30px;
+  width: 1200px;
+  max-width: 95%;
+}
+
+@media (max-width: 1000px) {
+  .main-content {
+    flex-direction: column;
+  }
+}
+/* ---------- PAGE WRAPPER ---------- */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- HEADER ---------- */
+.app-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* ---------- DASHBOARD CENTER ---------- */
+.dashboard {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.main-content {
+  display: flex;
+  gap: 30px;
+  width: 1200px;
+  max-width: 95%;
+}
+
+@media (max-width: 1000px) {
+  .main-content {
+    flex-direction: column;
+  }
+}
+.editor-section,
+.result-section {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+}
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  align-items: center;
+}
+
+.controls select {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #1e293b;
+  color: white;
+}
+
+/* FILE INPUT FIX */
+.controls input[type="file"] {
+  background: #1e293b;
+  padding: 6px;
+  border-radius: 8px;
+  color: white;
+}
+.output {
+  height: 420px;
+  overflow: auto;
+  border-radius: 14px;
+  padding: 16px;
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.output {
+  height: 420px;
+  overflow: auto;
+  border-radius: 14px;
+  padding: 16px;
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+/* PAGE WRAPPER */
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* MATRIX CANVAS */
+#bgCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
+/* HEADER */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  font-weight: 600;
+}
+
+.theme-buttons button {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255,255,255,0.1);
+}
+
+/* CENTER DASHBOARD */
+.dashboard {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
 }
