@@ -3,20 +3,17 @@ import CodeEditor from "./components/CodeEditor";
 import "./App.css";
 
 function App() {
-  const [theme, setTheme] = useState("system");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
   const canvasRef = useRef(null);
 
   /* ---------------- THEME SYSTEM ---------------- */
   useEffect(() => {
     const root = document.documentElement;
-
-    if (theme === "dark") root.setAttribute("data-theme", "dark");
-    else if (theme === "light") root.setAttribute("data-theme", "light");
-    else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.setAttribute("data-theme", prefersDark ? "dark" : "light");
-    }
+    root.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
   }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   /* ---------------- PARTICLE CONSTELLATION BACKGROUND ---------------- */
   useEffect(() => {
@@ -61,16 +58,14 @@ function App() {
     const draw = () => {
       const W = canvas.width;
       const H = canvas.height;
+      const isDark = document.documentElement.getAttribute("data-theme") !== "light";
 
-      ctx.fillStyle = "#0b0f1a";
+      ctx.fillStyle = isDark ? "#0b0f1a" : "rgba(241,245,249,0.3)";
       ctx.fillRect(0, 0, W, H);
 
-      // Update & draw particles
       particles.forEach((p) => {
         p.pulse += p.pulseSpeed;
         const glowRadius = p.r + Math.sin(p.pulse) * 0.8;
-
-        // Mouse repulsion
         const dx = p.x - mouse.x;
         const dy = p.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -79,28 +74,16 @@ function App() {
           p.vx += (dx / dist) * force * 0.3;
           p.vy += (dy / dist) * force * 0.3;
         }
-
-        // Dampen velocity
-        p.vx *= 0.98;
-        p.vy *= 0.98;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Wrap around edges
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
+        p.vx *= 0.98; p.vy *= 0.98;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
 
         const rgb = hexToRgb(p.color);
-
-        // Draw glow halo
         ctx.beginPath();
         ctx.arc(p.x, p.y, glowRadius * 4, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${rgb}, 0.08)`;
         ctx.fill();
-
-        // Draw core dot
         ctx.beginPath();
         ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
@@ -110,21 +93,16 @@ function App() {
         ctx.shadowBlur = 0;
       });
 
-      // Draw connections
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
+          const a = particles[i]; const b = particles[j];
+          const dx = a.x - b.x; const dy = a.y - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
           if (dist < CONNECTION_DIST) {
             const alpha = (1 - dist / CONNECTION_DIST) * 0.5;
             const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
             gradient.addColorStop(0, `rgba(${hexToRgb(a.color)}, ${alpha})`);
             gradient.addColorStop(1, `rgba(${hexToRgb(b.color)}, ${alpha})`);
-
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -134,18 +112,15 @@ function App() {
           }
         }
       }
-
       animId = requestAnimationFrame(draw);
     };
 
     const onMouseMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
     const onMouseLeave = () => { mouse.x = -9999; mouse.y = -9999; };
-
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseleave", onMouseLeave);
-
     draw();
 
     return () => {
@@ -158,8 +133,6 @@ function App() {
 
   return (
     <div className="page">
-
-      {/* MATRIX BACKGROUND */}
       <canvas ref={canvasRef} id="bgCanvas"></canvas>
 
       <div className="page-wrapper">
@@ -176,11 +149,15 @@ function App() {
             </h1>
             <p className="site-subtitle">Developed by Harsh Jaiswal &amp; Krishna Garg</p>
           </div>
+
+          {/* THEME TOGGLE */}
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+          </button>
         </div>
 
-        {/* CENTERED DASHBOARD */}
         <div className="dashboard">
-          <CodeEditor />
+          <CodeEditor theme={theme} />
         </div>
 
       </div>
