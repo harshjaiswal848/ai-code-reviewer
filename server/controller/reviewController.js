@@ -4,37 +4,48 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.reviewCode = async (req, res) => {
   try {
-    const { code, language, mode, history } = req.body;
+    const { code, language = "JavaScript", mode = "review" } = req.body;
 
     if (!code) {
       return res.json({ feedback: "No code provided." });
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite"
+      model: "gemini-pro"
     });
 
     let instruction = "";
 
-    if (mode === "fix")
+    if (mode === "fix") {
       instruction = "Fix all errors and return corrected code.";
-    else if (mode === "optimize")
+    } 
+    else if (mode === "optimize") {
       instruction = "Optimize this code for performance.";
-    else if (mode === "explain")
+    } 
+    else if (mode === "explain") {
       instruction = "Explain this code step by step.";
-    else
+    } 
+    else {
       instruction = "Review this code and find bugs and improvements.";
-
-    const conversationHistory = history
-      ? history.map((msg) => `${msg.role}: ${msg.content}`).join("\n")
-      : "";
+    }
 
     const prompt = `
-Conversation History:
-${conversationHistory}
-
 ${instruction}
-Language: ${language}
+
+Programming Language: ${language}
+
+IMPORTANT:
+Return response in this structured format:
+
+Errors:
+- list errors here
+
+Suggestions:
+- list improvements here
+
+Code Quality Score: (give score out of 10)
+
+Confidence: (give percentage)
 
 Code:
 ${code}

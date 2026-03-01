@@ -217,36 +217,6 @@ body {
   background: linear-gradient(90deg, #22c55e, #3b82f6);
   transition: width 0.5s ease;
 }
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.chat-messages {
-  height: 350px;              /* fixed height */
-  overflow-y: auto;           /* vertical scroll */
-  overflow-x: auto;           /* horizontal scroll */
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.chat-bubble {
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 100%;      /* prevent shrinking */
-  overflow-x: auto;     /* horizontal scroll */
-  overflow-y: auto;
-  
-}
-.chat-bubble pre {
-  margin: 0;
-  white-space: pre;   /* do NOT wrap */
-}
 .editor-section .cm-editor {
   resize: vertical;
   overflow: auto;
@@ -255,17 +225,6 @@ body {
 .output {
   height: 300px;
   overflow: auto;
-}
-
-.chat-bubble.user {
-  align-self: flex-end;
-  background: #3b82f6;
-  color: white;
-}
-
-.chat-bubble.ai {
-  align-self: flex-start;
-  background: #1e293b;
 }
 
 .main-content {
@@ -280,9 +239,71 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+.result-section .output {
+  height: 400px;
+  overflow: auto;
+}
 .result-section {
   flex: 1;
   min-width: 400px;
   display: flex;
   flex-direction: column;
+}
+/* MAIN LAYOUT */
+.app-layout {
+  display: flex;
+  gap: 20px;
+  height: 80vh;
+  padding: 20px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+    height: auto;
+  }
+}
+.editor-panel {
+  flex: 1.5;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* editor container */
+.editor-wrapper {
+  height: 400px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.score-section {
+  margin: 15px 0;
+}
+
+.score-bar {
+  height: 12px;
+  background: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 5px 0;
+}
+
+.score-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #3b82f6);
+  transition: width 0.5s ease;
 }

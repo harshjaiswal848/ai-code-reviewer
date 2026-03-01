@@ -1,104 +1,90 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import axios from "axios";
+import ReviewResult from "./ReviewResult";
 
 function CodeEditor() {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("JavaScript");
   const [mode, setMode] = useState("review");
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("chatHistory");
-    if (saved) setMessages(JSON.parse(saved));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("chatHistory", JSON.stringify(messages));
-  }, [messages]);
 
   const reviewCode = async () => {
-    if (!code) return;
-
-    const newUserMessage = {
-      role: "User",
-      content: code
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    setLoading(true);
+    if (!code || loading) return;
 
     try {
+      setLoading(true);
+
       const res = await axios.post("http://localhost:5000/review", {
         code,
         language,
-        mode,
-        history: messages
+        mode
       });
 
-      const aiMessage = {
-        role: "AI",
-        content: res.data.feedback
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
+      setResult(res.data.feedback);
       setLoading(false);
-    } catch (error) {
+    } catch {
+      setResult("Error connecting to backend");
       setLoading(false);
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    localStorage.removeItem("chatHistory");
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCode(event.target.result);
+    };
+    reader.readAsText(file);
   };
 
   return (
-    <div className="chat-container">
+    <div className="main-content">
 
-      <div className="controls">
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-          <option>JavaScript</option>
-          <option>Python</option>
-          <option>Java</option>
-          <option>C++</option>
-        </select>
+      {/* LEFT SIDE */}
+      <div className="editor-section">
+        <h2>Code Editor</h2>
 
-        <select value={mode} onChange={(e) => setMode(e.target.value)}>
-          <option value="review">Review</option>
-          <option value="fix">Fix</option>
-          <option value="optimize">Optimize</option>
-          <option value="explain">Explain</option>
-        </select>
+        <div className="controls">
+          <select value={language} onChange={(e)=>setLanguage(e.target.value)}>
+            <option>JavaScript</option>
+            <option>Python</option>
+            <option>Java</option>
+            <option>C++</option>
+          </select>
 
-        <button onClick={clearChat}>Clear Chat</button>
+          <select value={mode} onChange={(e)=>setMode(e.target.value)}>
+            <option value="review">Review</option>
+            <option value="fix">Fix</option>
+            <option value="optimize">Optimize</option>
+            <option value="explain">Explain</option>
+          </select>
+
+          <input type="file" onChange={handleFileUpload} />
+        </div>
+
+        <div className="editor-wrapper">
+          <CodeMirror
+            value={code}
+            height="100%"
+            theme="dark"
+            onChange={(value)=>setCode(value)}
+          />
+        </div>
+
+        <button className="btn glow-btn" onClick={reviewCode}>
+          {loading ? "Reviewing..." : "Review Code"}
+        </button>
       </div>
 
-      <div className="chat-messages">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`chat-bubble ${msg.role === "AI" ? "ai" : "user"}`}
-          >
-            <strong>{msg.role}</strong>
-            <pre>{msg.content}</pre>
-          </div>
-        ))}
-
-        {loading && <div className="chat-bubble ai">AI is thinking...</div>}
+      {/* RIGHT SIDE */}
+      <div className="result-section">
+        <h2>AI Review</h2>
+        <ReviewResult result={result} />
       </div>
-
-      <CodeMirror
-        value={code}
-        height="200px"
-        theme="dark"
-        onChange={(value) => setCode(value)}
-      />
-
-      <button className="btn glow-btn" onClick={reviewCode}>
-        Send
-      </button>
 
     </div>
   );
