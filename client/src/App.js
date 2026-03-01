@@ -18,48 +18,141 @@ function App() {
     }
   }, [theme]);
 
-  /* ---------------- MATRIX BACKGROUND ---------------- */
+  /* ---------------- PARTICLE CONSTELLATION BACKGROUND ---------------- */
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
+    const PARTICLE_COUNT = 110;
+    const CONNECTION_DIST = 150;
+    const MOUSE_REPEL_DIST = 120;
+    const COLORS = ["#6366f1", "#3b82f6", "#22c55e", "#8b5cf6", "#14b8a6"];
+
+    let particles = [];
+    let mouse = { x: -9999, y: -9999 };
+    let animId;
+
+    const initParticles = () => {
+      particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        r: Math.random() * 2 + 1.2,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        pulse: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.01 + Math.random() * 0.02,
+      }));
+    };
+
+    const hexToRgb = (hex) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `${r},${g},${b}`;
+    };
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      initParticles();
     };
+
+    const draw = () => {
+      const W = canvas.width;
+      const H = canvas.height;
+
+      ctx.fillStyle = "#0b0f1a";
+      ctx.fillRect(0, 0, W, H);
+
+      // Update & draw particles
+      particles.forEach((p) => {
+        p.pulse += p.pulseSpeed;
+        const glowRadius = p.r + Math.sin(p.pulse) * 0.8;
+
+        // Mouse repulsion
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_REPEL_DIST && dist > 0) {
+          const force = (MOUSE_REPEL_DIST - dist) / MOUSE_REPEL_DIST;
+          p.vx += (dx / dist) * force * 0.3;
+          p.vy += (dy / dist) * force * 0.3;
+        }
+
+        // Dampen velocity
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap around edges
+        if (p.x < 0) p.x = W;
+        if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H;
+        if (p.y > H) p.y = 0;
+
+        const rgb = hexToRgb(p.color);
+
+        // Draw glow halo
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowRadius * 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${rgb}, 0.08)`;
+        ctx.fill();
+
+        // Draw core dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < CONNECTION_DIST) {
+            const alpha = (1 - dist / CONNECTION_DIST) * 0.5;
+            const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+            gradient.addColorStop(0, `rgba(${hexToRgb(a.color)}, ${alpha})`);
+            gradient.addColorStop(1, `rgba(${hexToRgb(b.color)}, ${alpha})`);
+
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    const onMouseMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+    const onMouseLeave = () => { mouse.x = -9999; mouse.y = -9999; };
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseleave", onMouseLeave);
 
-    const letters = "01<>/{}[]()function const var let";
-    const fontSize = 14;
-    const columns = Math.floor(canvas.width / fontSize);
-    const drops = Array(columns).fill(1);
-
-    const draw = () => {
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#16a34a"; // softer green
-      ctx.font = fontSize + "px monospace";
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = letters.charAt(Math.floor(Math.random() * letters.length));
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-
-        drops[i]++;
-      }
-    };
-
-    const interval = setInterval(draw, 40);
+    draw();
 
     return () => {
-      clearInterval(interval);
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -74,13 +167,14 @@ function App() {
         {/* HEADER */}
         <div className="app-header">
           <div className="header-left">
-            AI CODE REVIEWER <br></br>
-            Developed by Harsh Jaiswal & Krishna Garg
-          </div>
-
-          <div className="theme-buttons">
-            <button onClick={() => setTheme("dark")}>🌙</button>
-            <button onClick={() => setTheme("light")}>☀</button>
+            <h1 className="site-title">
+              <span className="title-ai">AI</span>
+              <span className="title-separator"> </span>
+              <span className="title-code">CODE</span>
+              <span className="title-separator"> </span>
+              <span className="title-reviewer">REVIEWER</span>
+            </h1>
+            <p className="site-subtitle">Developed by Harsh Jaiswal &amp; Krishna Garg</p>
           </div>
         </div>
 

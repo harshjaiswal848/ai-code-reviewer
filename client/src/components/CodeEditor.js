@@ -70,7 +70,7 @@ function CodeEditor() {
           <CodeMirror
             value={code}
             height="100%"
-            theme="dark"
+            theme={document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"}
             onChange={(value)=>setCode(value)}
           />
         </div>
