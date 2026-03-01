@@ -17,31 +17,42 @@ const readSnippetFromURL = () => {
   const params = new URLSearchParams(window.location.search);
   const raw = params.get("snippet");
   if (!raw) return null;
-  try {
-    return JSON.parse(decodeURIComponent(escape(atob(raw))));
-  } catch { return null; }
+  try { return JSON.parse(decodeURIComponent(escape(atob(raw)))); }
+  catch { return null; }
 };
 
+const MODE_ICON = { review: "🔍", fix: "🔧", optimize: "⚡", explain: "📖" };
+
 function CodeEditor({ theme }) {
-  const [code, setCode] = useState("");
+  const [code, setCode]         = useState("");
   const [language, setLanguage] = useState("JavaScript");
-  const [mode, setMode] = useState("review");
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [mode, setMode]         = useState("review");
+  const [result, setResult]     = useState("");
+  const [loading, setLoading]   = useState(false);
+
+  /* ── Session History ── */
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("reviewHistory") || "[]"); }
+    catch { return []; }
+  });
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem("reviewHistory", JSON.stringify(history));
+  }, [history]);
 
   /* ── Collaboration state ── */
-  const [roomId, setRoomId] = useState("");
-  const [joinInput, setJoinInput] = useState("");
-  const [collaborators, setCollaborators] = useState(0);
+  const [roomId, setRoomId]           = useState("");
+  const [joinInput, setJoinInput]     = useState("");
   const [collabActive, setCollabActive] = useState(false);
   const [collabStatus, setCollabStatus] = useState("");
-  const [showCollab, setShowCollab] = useState(false);
+  const [showCollab, setShowCollab]   = useState(false);
   const wsRef = useRef(null);
   const isRemoteUpdate = useRef(false);
 
   /* ── Snippet share state ── */
-  const [snippetLink, setSnippetLink] = useState("");
-  const [showSnippet, setShowSnippet] = useState(false);
+  const [snippetLink, setSnippetLink]     = useState("");
+  const [showSnippet, setShowSnippet]     = useState(false);
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetLoaded, setSnippetLoaded] = useState(false);
 
@@ -58,21 +69,57 @@ function CodeEditor({ theme }) {
   }, []);
 
   /* ── Keyboard shortcut Ctrl+Enter ── */
-  const handleKeyDown = useCallback((e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") reviewCode();
-  }, [code, loading]);
+  const reviewCode = useCallback(async () => {
+    if (!code || loading) return;
+    try {
+      setLoading(true);
+      const res = await axios.post("http://localhost:5000/review", { code, language, mode });
+      const feedback = res.data.feedback;
+      setResult(feedback);
+      setLoading(false);
+
+      // Save to session history
+      const entry = {
+        id: Date.now(),
+        mode,
+        language,
+        code,
+        result: feedback,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setHistory(prev => [entry, ...prev].slice(0, 20));
+
+    } catch {
+      setResult("Error connecting to backend");
+      setLoading(false);
+    }
+  }, [code, language, mode, loading]);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") reviewCode();
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  }, [reviewCode]);
+
+  /* ── Load from history entry ── */
+  const loadFromHistory = (entry) => {
+    setCode(entry.code);
+    setLanguage(entry.language);
+    setMode(entry.mode);
+    setResult(entry.result);
+    setShowHistory(false);
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    sessionStorage.removeItem("reviewHistory");
+  };
 
   /* ── WebSocket collaboration ── */
   const connectToRoom = (id) => {
     if (wsRef.current) wsRef.current.close();
-
-    // Using a public free WebSocket echo/broadcast server for demo.
-    // In production replace with your own Socket.io/WS server URL.
     const ws = new WebSocket(`wss://socketsbay.com/wss/v2/1/${id}/`);
     wsRef.current = ws;
 
@@ -81,7 +128,6 @@ function CodeEditor({ theme }) {
       setCollabStatus("🟢 Connected to room: " + id);
       ws.send(JSON.stringify({ type: "join", roomId: id }));
     };
-
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -90,20 +136,12 @@ function CodeEditor({ theme }) {
           setCode(msg.code);
           setLanguage(msg.language);
         }
-        if (msg.type === "join") {
-          setCollaborators(c => c + 1);
-        }
-        if (msg.type === "leave") {
-          setCollaborators(c => Math.max(0, c - 1));
-        }
       } catch {}
     };
-
     ws.onerror = () => setCollabStatus("🔴 Connection error");
     ws.onclose = () => {
       setCollabActive(false);
       setCollabStatus("⚪ Disconnected");
-      setCollaborators(0);
     };
   };
 
@@ -121,39 +159,18 @@ function CodeEditor({ theme }) {
   };
 
   const leaveRoom = () => {
-    if (wsRef.current) {
-      wsRef.current.send(JSON.stringify({ type: "leave" }));
-      wsRef.current.close();
-    }
+    if (wsRef.current) wsRef.current.close();
     setRoomId("");
     setCollabActive(false);
     setCollabStatus("");
   };
 
-  /* ── Broadcast code changes to room ── */
+  /* ── Broadcast code changes ── */
   const handleCodeChange = (value) => {
-    if (isRemoteUpdate.current) {
-      isRemoteUpdate.current = false;
-      setCode(value);
-      return;
-    }
+    if (isRemoteUpdate.current) { isRemoteUpdate.current = false; }
     setCode(value);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "code-update", code: value, language }));
-    }
-  };
-
-  /* ── Review ── */
-  const reviewCode = async () => {
-    if (!code || loading) return;
-    try {
-      setLoading(true);
-      const res = await axios.post("http://localhost:5000/review", { code, language, mode });
-      setResult(res.data.feedback);
-      setLoading(false);
-    } catch {
-      setResult("Error connecting to backend");
-      setLoading(false);
     }
   };
 
@@ -162,7 +179,7 @@ function CodeEditor({ theme }) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => setCode(event.target.result);
+    reader.onload = (ev) => setCode(ev.target.result);
     reader.readAsText(file);
   };
 
@@ -183,6 +200,38 @@ function CodeEditor({ theme }) {
   return (
     <div className="main-content">
 
+      {/* ── HISTORY SIDEBAR ── */}
+      <div className={`history-sidebar ${showHistory ? "open" : ""}`}>
+        <div className="history-header">
+          <span>🕑 Session History</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {history.length > 0 && (
+              <button className="history-clear-btn" onClick={clearHistory}>Clear</button>
+            )}
+            <button className="history-close-btn" onClick={() => setShowHistory(false)}>✕</button>
+          </div>
+        </div>
+
+        {history.length === 0 ? (
+          <p className="history-empty">No reviews yet this session.</p>
+        ) : (
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {history.map(entry => (
+              <div key={entry.id} className="history-item" onClick={() => loadFromHistory(entry)}>
+                <div className="history-item-top">
+                  <span className="history-mode">{MODE_ICON[entry.mode]} {entry.mode}</span>
+                  <span className="history-lang">{entry.language}</span>
+                  <span className="history-time">{entry.timestamp}</span>
+                </div>
+                <div className="history-preview">
+                  {entry.code.slice(0, 80).replace(/\n/g, " ")}…
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ── SNIPPET LOADED BANNER ── */}
       {snippetLoaded && (
         <div className="snippet-banner">
@@ -196,12 +245,20 @@ function CodeEditor({ theme }) {
         <div className="section-title-row">
           <h2>Code Editor</h2>
           <div style={{ display: "flex", gap: 8 }}>
-            {/* Collab button */}
-            <button className="collab-toggle-btn" onClick={() => setShowCollab(s => !s)} title="Real-time collaboration">
+            <button
+              className="history-toggle-btn"
+              onClick={() => setShowHistory(s => !s)}
+              title="Session History"
+            >
+              🕑 History
+              {history.length > 0 && (
+                <span className="history-badge">{history.length}</span>
+              )}
+            </button>
+            <button className="collab-toggle-btn" onClick={() => setShowCollab(s => !s)}>
               👥 Collab {collabActive && <span className="collab-dot" />}
             </button>
-            {/* Share button */}
-            <button className="share-btn" onClick={handleShare} title="Share snippet">
+            <button className="share-btn" onClick={handleShare}>
               🔗 Share
             </button>
           </div>
