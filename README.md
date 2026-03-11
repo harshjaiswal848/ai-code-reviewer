@@ -60,7 +60,7 @@ AI Code Review Response
 
 ### AI Integration
 
-* Google Gemini API (`gemini-pro`)
+* Google Gemini API (`gemini-2.5-flash-lite`)
 
 ---
 
