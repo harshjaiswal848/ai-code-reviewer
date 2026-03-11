@@ -49,7 +49,6 @@ AI Code Review Response
 * CSS3
 * JavaScript
 * CodeMirror
-* Axios
 
 ### Backend
 
