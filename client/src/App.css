@@ -1043,3 +1043,20 @@ h3 { color: var(--heading); }
 }
 
 .nav-btn-filled:hover { background: #2ea043; }
+
+.nav-btn-repo {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #818cf8;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-btn-repo:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: #6366f1;
+  color: #a5b4fc;
+}

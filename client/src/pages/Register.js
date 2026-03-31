@@ -44,7 +44,7 @@ const Register = () => {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Create account</h2>
-        <p className="auth-subtitle">Start reviewing code with AI</p>
+        <p className="auth-subtitle">Start reviewing code with AI Code Reviewer</p>
 
         {error && <div className="auth-error">{error}</div>}
 

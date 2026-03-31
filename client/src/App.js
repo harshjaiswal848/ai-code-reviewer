@@ -161,6 +161,12 @@ function App() {
           </div>
 
           <div className="header-right">
+
+            {/* REPO ANALYZER BUTTON — always visible */}
+            <button className="nav-btn-repo" onClick={() => navigate("/repo-analyzer")}>
+              🔍 Repo Analyzer
+            </button>
+
             {/* AUTH BUTTONS */}
             {user ? (
               <>

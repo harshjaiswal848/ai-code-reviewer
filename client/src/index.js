@@ -5,6 +5,7 @@ import App from './App';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import RepoAnalyzer from './pages/RepoAnalyzer';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import reportWebVitals from './reportWebVitals';
@@ -19,6 +20,7 @@ root.render(
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/repo-analyzer" element={<RepoAnalyzer />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
