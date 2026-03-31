@@ -42,11 +42,11 @@ function CodeEditor({ theme }) {
   }, [history]);
 
   /* ── Collaboration state ── */
-  const [roomId, setRoomId]           = useState("");
-  const [joinInput, setJoinInput]     = useState("");
+  const [roomId, setRoomId]             = useState("");
+  const [joinInput, setJoinInput]       = useState("");
   const [collabActive, setCollabActive] = useState(false);
   const [collabStatus, setCollabStatus] = useState("");
-  const [showCollab, setShowCollab]   = useState(false);
+  const [showCollab, setShowCollab]     = useState(false);
   const wsRef = useRef(null);
   const isRemoteUpdate = useRef(false);
 
@@ -73,7 +73,17 @@ function CodeEditor({ theme }) {
     if (!code || loading) return;
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/review", { code, language, mode });
+
+      // Get token from localStorage and attach to request
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await axios.post(
+        "http://localhost:5000/review",
+        { code, language, mode },
+        { headers }
+      );
+
       const feedback = res.data.feedback;
       setResult(feedback);
       setLoading(false);

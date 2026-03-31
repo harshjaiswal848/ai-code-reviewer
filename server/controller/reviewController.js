@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const supabase = require("../supabaseClient");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -10,7 +11,7 @@ exports.reviewCode = async (req, res) => {
       return res.json({ feedback: "No code provided." });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     let prompt = "";
 
@@ -102,8 +103,27 @@ ${code}`;
     }
 
     const result = await model.generateContent(prompt);
+    const feedback = result.response.text();
 
-    res.json({ feedback: result.response.text() });
+    // Save to Supabase only if user is authenticated
+    if (req.user) {
+      const { error: dbError } = await supabase.from("reviews").insert([
+        {
+          user_id: req.user.id,
+          code: code,
+          language: language,
+          mode: mode,
+          result: feedback,
+        },
+      ]);
+
+      if (dbError) {
+        // Don't block the response — just log it
+        console.error("Failed to save review to DB:", dbError.message);
+      }
+    }
+
+    res.json({ feedback });
 
   } catch (error) {
     console.log("Gemini Error:", error);

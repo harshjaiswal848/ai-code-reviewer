@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import CodeEditor from "./components/CodeEditor";
 import "./App.css";
 
 function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
   const canvasRef = useRef(null);
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   /* ---------------- THEME SYSTEM ---------------- */
   useEffect(() => {
@@ -131,6 +136,11 @@ function App() {
     };
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="page">
       <canvas ref={canvasRef} id="bgCanvas"></canvas>
@@ -150,10 +160,34 @@ function App() {
             <p className="site-subtitle">Developed by Harsh Jaiswal &amp; Krishna Garg</p>
           </div>
 
-          {/* THEME TOGGLE */}
-          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-            {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
-          </button>
+          <div className="header-right">
+            {/* AUTH BUTTONS */}
+            {user ? (
+              <>
+                <span className="nav-user">👤 {user.name}</span>
+                <button className="nav-btn-outline" onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </button>
+                <button className="nav-btn-outline nav-btn-logout" onClick={handleLogout}>
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="nav-btn-outline" onClick={() => navigate("/login")}>
+                  Log in
+                </button>
+                <button className="nav-btn-filled" onClick={() => navigate("/register")}>
+                  Sign up
+                </button>
+              </>
+            )}
+
+            {/* THEME TOGGLE */}
+            <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+              {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+            </button>
+          </div>
         </div>
 
         <div className="dashboard">
