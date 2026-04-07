@@ -1,0 +1,190 @@
+.security-scanner {
+  margin-top: 20px;
+  border: 1px solid rgba(248, 81, 73, 0.25);
+  border-radius: 14px;
+  background: rgba(13, 17, 23, 0.7);
+  overflow: hidden;
+}
+
+.security-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(248, 81, 73, 0.15);
+  background: rgba(248, 81, 73, 0.05);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.security-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.security-icon { font-size: 28px; line-height: 1; }
+
+.security-header h3 {
+  margin: 0 0 3px;
+  color: #e6edf3;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.security-header p {
+  margin: 0;
+  color: #8b949e;
+  font-size: 13px;
+}
+
+.security-scan-btn {
+  background: linear-gradient(135deg, #f85149, #d01c1c);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.security-scan-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.security-scan-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sec-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: sec-spin 0.7s linear infinite;
+}
+
+@keyframes sec-spin { to { transform: rotate(360deg); } }
+
+.security-error {
+  margin: 14px 20px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  color: #f85149;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Badges */
+.security-badges {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #21262d;
+  flex-wrap: wrap;
+}
+
+.security-score-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.score-number { font-size: 28px; line-height: 1; }
+.score-label  { font-size: 13px; opacity: 0.7; }
+
+.security-risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Analysis */
+.security-analysis {
+  padding: 20px;
+}
+
+.security-analysis h2 {
+  color: #e6edf3;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 18px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #21262d;
+}
+
+.security-analysis h2:first-child { margin-top: 0; }
+
+.security-analysis h3 {
+  color: #c9d1d9;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+
+.security-analysis p,
+.security-analysis li {
+  color: #c9d1d9;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.security-analysis ul { padding-left: 20px; margin: 6px 0; }
+.security-analysis strong { color: #e6edf3; }
+
+.security-analysis code {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: #f85149;
+}
+
+/* Empty state */
+.security-empty {
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.security-empty p {
+  color: #8b949e;
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.security-checks-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.security-check-tag {
+  background: rgba(248, 81, 73, 0.08);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  color: #f85149;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}

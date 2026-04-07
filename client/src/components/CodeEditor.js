@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import axios from "axios";
 import ReviewResult from "./ReviewResult";
+import CodeChat from "./CodeChat";
+import SecurityScanner from "./SecurityScanner";
 
 /* ── Unique room ID generator ── */
 const generateRoomId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -29,6 +31,9 @@ function CodeEditor({ theme }) {
   const [mode, setMode]         = useState("review");
   const [result, setResult]     = useState("");
   const [loading, setLoading]   = useState(false);
+
+  /* ── Right panel tab: "review" | "chat" | "security" ── */
+  const [activeTab, setActiveTab] = useState("review");
 
   /* ── Session History ── */
   const [history, setHistory] = useState(() => {
@@ -68,13 +73,13 @@ function CodeEditor({ theme }) {
     }
   }, []);
 
-  /* ── Keyboard shortcut Ctrl+Enter ── */
+  /* ── Review code ── */
   const reviewCode = useCallback(async () => {
     if (!code || loading) return;
     try {
       setLoading(true);
+      setActiveTab("review");
 
-      // Get token from localStorage and attach to request
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -88,7 +93,6 @@ function CodeEditor({ theme }) {
       setResult(feedback);
       setLoading(false);
 
-      // Save to session history
       const entry = {
         id: Date.now(),
         mode,
@@ -363,10 +367,43 @@ function CodeEditor({ theme }) {
         </button>
       </div>
 
-      {/* ── RIGHT: RESULT ── */}
+      {/* ── RIGHT: TABBED PANEL ── */}
       <div className="result-section">
-        <h2>AI Review</h2>
-        <ReviewResult result={result} mode={mode} />
+
+        {/* Tab bar */}
+        <div className="result-tabs">
+          <button
+            className={`result-tab ${activeTab === "review" ? "active" : ""}`}
+            onClick={() => setActiveTab("review")}
+          >
+            🔍 AI Review
+          </button>
+          <button
+            className={`result-tab ${activeTab === "chat" ? "active" : ""}`}
+            onClick={() => setActiveTab("chat")}
+            disabled={!result}
+            title={!result ? "Run a review first" : "Chat with AI about your code"}
+          >
+            💬 Chat
+          </button>
+          <button
+            className={`result-tab ${activeTab === "security" ? "active" : ""}`}
+            onClick={() => setActiveTab("security")}
+          >
+            🛡️ Security
+          </button>
+        </div>
+
+        {/* Tab content */}
+        {activeTab === "review" && (
+          <ReviewResult result={result} mode={mode} />
+        )}
+        {activeTab === "chat" && (
+          <CodeChat code={code} language={language} reviewResult={result} />
+        )}
+        {activeTab === "security" && (
+          <SecurityScanner code={code} language={language} />
+        )}
       </div>
 
     </div>
