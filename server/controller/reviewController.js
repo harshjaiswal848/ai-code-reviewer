@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.reviewCode = async (req, res) => {
   try {
-    const { code, language = "JavaScript", mode = "review" } = req.body;
+    const { code, language = "JavaScript", mode = "review", learningLevel = "intermediate" } = req.body;
 
     if (!code) {
       return res.json({ feedback: "No code provided." });
@@ -72,6 +72,33 @@ Explain each logical section.
 
 ## Key Concepts
 List any important patterns or techniques used.
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code:
+${code}`;
+
+
+    } else if (mode === "learning") {
+      prompt = `Teach the following ${language} code in a ${learningLevel} learning style.
+
+Return your response in this EXACT format:
+
+## Learning Goal
+One sentence objective for this lesson.
+
+## Concept Breakdown
+Explain the core ideas in simple progressive steps.
+
+## Guided Hints
+- provide hints without immediately giving full answers
+
+## Practice Exercise
+Give one short coding exercise based on this code.
+
+## Common Mistakes
+- list mistakes a learner at this level might make
 
 Code Quality Score: (score out of 10)
 Confidence: (percentage)
