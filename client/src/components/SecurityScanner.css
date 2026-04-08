@@ -188,3 +188,22 @@
   font-size: 12px;
   font-weight: 500;
 }
+.security-analysis pre {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 14px;
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: #c9d1d9;
+}
+
+.security-scanner input.repo-url-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 10px 12px;
+  font-size: 14px;
+}

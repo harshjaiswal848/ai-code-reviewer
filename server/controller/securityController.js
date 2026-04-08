@@ -54,6 +54,9 @@ Brief one-line justification of the score.
 ## Quick Fix Summary
 List the most urgent 3 fixes the developer should make immediately, numbered 1-2-3.
 
+## Patched Code
+Provide a secure patched version in a fenced code block.
+
 ## Overall Recommendation
 2-3 sentences summarizing the security posture of this code.
 
@@ -72,7 +75,10 @@ ${code}
     const riskMatch = scanResult.match(/Risk Level:\s*(CRITICAL|HIGH|MEDIUM|LOW|SAFE)/i);
     const riskLevel = riskMatch ? riskMatch[1].toUpperCase() : "UNKNOWN";
 
-    res.json({ scanResult, score, riskLevel });
+    const patchMatch = scanResult.match(/##\s*Patched Code[\s\S]*?```[\w-]*\n([\s\S]*?)```/i);
+    const patchedCode = patchMatch ? patchMatch[1].trim() : null;
+
+    res.json({ scanResult, score, riskLevel, patchedCode });
   } catch (err) {
     console.error("Security scan error:", err.message);
     res.status(500).json({ error: "Failed to run security scan. Please try again." });

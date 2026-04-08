@@ -20,7 +20,7 @@ function extractFixedCode(text) {
   const fence = text.match(/```[\w]*\n([\s\S]*?)```/);
   if (fence) return fence[1];
   // fallback: look for "Fixed Code:" or "Corrected Code:" section
-  const section = text.match(/(?:Fixed|Corrected)\s+Code:\s*\n([\s\S]+)/i);
+  const section = text.match(/(?:Fixed|Corrected|Optimized|Patched)\s+Code:\s*\n([\s\S]+)/i);
   if (section) return section[1].trim();
   return null;
 }
@@ -150,10 +150,10 @@ function ReviewResult({ result, originalCode, fixedCode: fixedCodeProp, mode }) 
 
     setLineComments(parseLineComments(result));
 
-    if (mode === "fix") {
-      const extracted = extractFixedCode(result);
+    const extracted = extractFixedCode(result);
+    if (extracted) {
       setFixedCode(extracted);
-      if (extracted) setTab("diff");
+      setTab("diff");
     } else {
       setTab("output");
       setFixedCode(null);
@@ -186,7 +186,7 @@ function ReviewResult({ result, originalCode, fixedCode: fixedCodeProp, mode }) 
       )}
 
       {/* ── Tab bar (only in fix mode when diff available) ── */}
-      {mode === "fix" && fixedCode && (
+      {fixedCode && (
         <div className="tab-bar">
           <button className={`tab-btn ${tab === "output" ? "active" : ""}`} onClick={() => setTab("output")}>📄 AI Response</button>
           <button className={`tab-btn ${tab === "diff" ? "active" : ""}`} onClick={() => setTab("diff")}>🔀 Diff View</button>
