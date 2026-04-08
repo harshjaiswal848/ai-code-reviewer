@@ -11,6 +11,8 @@ const securityRoutes = require("./routes/securityRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const prRoutes = require("./routes/prRoutes");
 const testRoutes = require("./routes/testRoutes");
+const dependencyRoutes = require("./routes/dependencyRoutes");
+const questRoutes = require("./routes/questRoutes");
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.use("/api/security", securityRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/pr", prRoutes);
 app.use("/api/tests", testRoutes);
+app.use("/api/dependency", dependencyRoutes);
+app.use("/api/quest", questRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

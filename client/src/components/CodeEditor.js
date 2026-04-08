@@ -6,6 +6,8 @@ import CodeChat from "./CodeChat";
 import SecurityScanner from "./SecurityScanner";
 import PRReviewer from "./PRReviewer";
 import TestGenerator from "./TestGenerator";
+import DependencyRisk from "./DependencyRisk";
+import QuestMode from "./QuestMode";
 
 /* ── Unique room ID generator ── */
 const generateRoomId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -416,6 +418,18 @@ function CodeEditor({ theme }) {
           >
             🔀 PR Agent
           </button>
+          <button
+            className={`result-tab ${activeTab === "deps" ? "active" : ""}`}
+            onClick={() => setActiveTab("deps")}
+          >
+            📦 Dependency Risk
+          </button>
+          <button
+            className={`result-tab ${activeTab === "quest" ? "active" : ""}`}
+            onClick={() => setActiveTab("quest")}
+          >
+            🎮 Quest
+          </button>
         </div>
 
         {/* Tab content */}
@@ -433,6 +447,12 @@ function CodeEditor({ theme }) {
         )}
         {activeTab === "pr" && (
           <PRReviewer />
+        )}
+        {activeTab === "deps" && (
+          <DependencyRisk />
+        )}
+        {activeTab === "quest" && (
+          <QuestMode code={code} language={language} />
         )}
       </div>
 

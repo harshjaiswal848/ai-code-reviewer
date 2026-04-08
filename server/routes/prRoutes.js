@@ -1,5 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const { reviewPullRequest, postPullRequestReview } = require("../controller/prController");
+
+router.post("/review", reviewPullRequest);
+router.post("/post-review", postPullRequestReview);
 const { reviewPullRequest } = require("../controller/prController");
 
 router.post("/review", reviewPullRequest);

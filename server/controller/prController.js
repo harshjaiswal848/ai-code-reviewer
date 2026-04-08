@@ -114,3 +114,54 @@ A single concise paragraph suitable for GitHub review.`;
     res.status(500).json({ error: "Failed to analyze PR. Please try again." });
   }
 };
+
+
+exports.postPullRequestReview = async (req, res) => {
+  const { prUrl, githubToken, reviewBody, event = "COMMENT" } = req.body;
+
+  if (!githubToken) {
+    return res.status(400).json({ error: "GitHub token is required." });
+  }
+
+  if (!reviewBody || !reviewBody.trim()) {
+    return res.status(400).json({ error: "Review body is required." });
+  }
+
+  const parsed = parsePullRequestUrl(prUrl);
+  if (!parsed) {
+    return res.status(400).json({ error: "Please provide a valid GitHub Pull Request URL." });
+  }
+
+  const { owner, repo, pullNumber } = parsed;
+
+  try {
+    const response = await axios.post(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
+      {
+        body: reviewBody,
+        event,
+      },
+      {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${githubToken}`,
+          "User-Agent": "ai-code-reviewer-pr-agent",
+        },
+      }
+    );
+
+    res.json({
+      success: true,
+      reviewId: response.data.id,
+      submittedAt: response.data.submitted_at,
+      htmlUrl: response.data.html_url,
+    });
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 401 || status === 403) {
+      return res.status(401).json({ error: "GitHub token is invalid or missing required pull request permissions." });
+    }
+    console.error("PR post review error:", err.message);
+    res.status(500).json({ error: "Failed to post review to GitHub." });
+  }
+};
