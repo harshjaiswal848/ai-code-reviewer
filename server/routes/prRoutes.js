@@ -4,5 +4,8 @@ const { reviewPullRequest, postPullRequestReview } = require("../controller/prCo
 
 router.post("/review", reviewPullRequest);
 router.post("/post-review", postPullRequestReview);
+const { reviewPullRequest } = require("../controller/prController");
+
+router.post("/review", reviewPullRequest);
 
 module.exports = router;

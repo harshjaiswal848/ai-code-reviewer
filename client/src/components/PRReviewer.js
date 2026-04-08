@@ -10,6 +10,9 @@ function PRReviewer() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [postMessage, setPostMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const analyzePr = async () => {
     if (!prUrl.trim()) return;
@@ -60,6 +63,7 @@ function PRReviewer() {
           <div>
             <h3>PR Reviewer Agent</h3>
             <p>Paste a GitHub PR URL to get AI review comments and one-click post to GitHub.</p>
+            <p>Paste a GitHub PR URL to get AI review comments and merge verdict.</p>
           </div>
         </div>
         <button className="security-scan-btn" onClick={analyzePr} disabled={loading || !prUrl.trim()}>
@@ -68,6 +72,7 @@ function PRReviewer() {
       </div>
 
       <div style={{ padding: 16, display: "grid", gap: 10 }}>
+      <div style={{ padding: 16 }}>
         <input
           className="repo-url-input"
           placeholder="https://github.com/owner/repo/pull/123"
@@ -99,6 +104,16 @@ function PRReviewer() {
             </button>
           </div>
         </>
+      </div>
+
+      {error && <div className="security-error">{error}</div>}
+
+      {result && (
+        <div className="security-analysis">
+          <p><strong>{result.meta.title}</strong> by @{result.meta.author}</p>
+          <p>Files: {result.meta.changedFiles} | +{result.meta.additions} / -{result.meta.deletions}</p>
+          <ReactMarkdown>{result.review}</ReactMarkdown>
+        </div>
       )}
     </div>
   );

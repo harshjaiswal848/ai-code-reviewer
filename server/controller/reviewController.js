@@ -124,6 +124,33 @@ Confidence: (percentage)
 Code:
 ${code}${teamMemory}`;
 
+
+    } else if (mode === "learning") {
+      prompt = `Teach the following ${language} code in a ${learningLevel} learning style.
+
+Return your response in this EXACT format:
+
+## Learning Goal
+One sentence objective for this lesson.
+
+## Concept Breakdown
+Explain the core ideas in simple progressive steps.
+
+## Guided Hints
+- provide hints without immediately giving full answers
+
+## Practice Exercise
+Give one short coding exercise based on this code.
+
+## Common Mistakes
+- list mistakes a learner at this level might make
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code:
+${code}`;
+
     } else {
       // review mode — include line-by-line comments
       prompt = `Review the following ${language} code and find bugs and improvements.
