@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.reviewCode = async (req, res) => {
   try {
-    const { code, language = "JavaScript", mode = "review" } = req.body;
+    const { code, language = "JavaScript", mode = "review", learningLevel = "intermediate" } = req.body;
 
     if (!code) {
       return res.json({ feedback: "No code provided." });
@@ -14,6 +14,24 @@ exports.reviewCode = async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     let prompt = "";
+
+
+    let teamMemory = "";
+    if (req.user) {
+      const { data: recentReviews } = await supabase
+        .from("reviews")
+        .select("language, mode, result, created_at")
+        .eq("user_id", req.user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (recentReviews && recentReviews.length > 0) {
+        const summary = recentReviews
+          .map((r, i) => `#${i + 1} ${r.language}/${r.mode}: ${(r.result || "").slice(0, 240)}`)
+          .join("\n");
+        teamMemory = `\n\nTeam Memory Context (adapt style to preferred patterns):\n${summary}`;
+      }
+    }
 
     if (mode === "fix") {
       prompt = `Fix all errors in the following ${language} code.
@@ -35,7 +53,7 @@ Code Quality Score: (score out of 10)
 Confidence: (percentage)
 
 Code to fix:
-${code}`;
+${code}${teamMemory}`;
 
     } else if (mode === "optimize") {
       prompt = `Optimize the following ${language} code for performance and readability.
@@ -57,7 +75,7 @@ Code Quality Score: (score out of 10)
 Confidence: (percentage)
 
 Code to optimize:
-${code}`;
+${code}${teamMemory}`;
 
     } else if (mode === "explain") {
       prompt = `Explain the following ${language} code step by step for a developer.
@@ -77,7 +95,34 @@ Code Quality Score: (score out of 10)
 Confidence: (percentage)
 
 Code:
-${code}`;
+${code}${teamMemory}`;
+
+
+    } else if (mode === "learning") {
+      prompt = `Teach the following ${language} code in a ${learningLevel} learning style.
+
+Return your response in this EXACT format:
+
+## Learning Goal
+One sentence objective for this lesson.
+
+## Concept Breakdown
+Explain the core ideas in simple progressive steps.
+
+## Guided Hints
+- provide hints without immediately giving full answers
+
+## Practice Exercise
+Give one short coding exercise based on this code.
+
+## Common Mistakes
+- list mistakes a learner at this level might make
+
+Code Quality Score: (score out of 10)
+Confidence: (percentage)
+
+Code:
+${code}${teamMemory}`;
 
     } else {
       // review mode — include line-by-line comments
@@ -99,7 +144,7 @@ Code Quality Score: (score out of 10)
 Confidence: (percentage)
 
 Code to review:
-${code}`;
+${code}${teamMemory}`;
     }
 
     const result = await model.generateContent(prompt);

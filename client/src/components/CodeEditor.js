@@ -4,6 +4,10 @@ import axios from "axios";
 import ReviewResult from "./ReviewResult";
 import CodeChat from "./CodeChat";
 import SecurityScanner from "./SecurityScanner";
+import PRReviewer from "./PRReviewer";
+import TestGenerator from "./TestGenerator";
+import DependencyRisk from "./DependencyRisk";
+import QuestMode from "./QuestMode";
 
 /* ── Unique room ID generator ── */
 const generateRoomId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -23,12 +27,13 @@ const readSnippetFromURL = () => {
   catch { return null; }
 };
 
-const MODE_ICON = { review: "🔍", fix: "🔧", optimize: "⚡", explain: "📖" };
+const MODE_ICON = { review: "🔍", fix: "🔧", optimize: "⚡", explain: "📖", learning: "🎓" };
 
 function CodeEditor({ theme }) {
   const [code, setCode]         = useState("");
   const [language, setLanguage] = useState("JavaScript");
   const [mode, setMode]         = useState("review");
+  const [learningLevel, setLearningLevel] = useState("intermediate");
   const [result, setResult]     = useState("");
   const [loading, setLoading]   = useState(false);
 
@@ -85,7 +90,7 @@ function CodeEditor({ theme }) {
 
       const res = await axios.post(
         "http://localhost:5000/review",
-        { code, language, mode },
+        { code, language, mode, learningLevel },
         { headers }
       );
 
@@ -107,7 +112,7 @@ function CodeEditor({ theme }) {
       setResult("Error connecting to backend");
       setLoading(false);
     }
-  }, [code, language, mode, loading]);
+  }, [code, language, mode, learningLevel, loading]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -345,7 +350,16 @@ function CodeEditor({ theme }) {
             <option value="fix">🔧 Fix</option>
             <option value="optimize">⚡ Optimize</option>
             <option value="explain">📖 Explain</option>
+            <option value="learning">🎓 Learning Mode</option>
           </select>
+
+          {mode === "learning" && (
+            <select value={learningLevel} onChange={(e) => setLearningLevel(e.target.value)}>
+              <option value="beginner">🟢 Beginner</option>
+              <option value="intermediate">🟡 Intermediate</option>
+              <option value="advanced">🔴 Advanced</option>
+            </select>
+          )}
 
           <input type="file" onChange={handleFileUpload} />
         </div>
@@ -392,17 +406,53 @@ function CodeEditor({ theme }) {
           >
             🛡️ Security
           </button>
+          <button
+            className={`result-tab ${activeTab === "tests" ? "active" : ""}`}
+            onClick={() => setActiveTab("tests")}
+          >
+            🧪 Test Cases
+          </button>
+          <button
+            className={`result-tab ${activeTab === "pr" ? "active" : ""}`}
+            onClick={() => setActiveTab("pr")}
+          >
+            🔀 PR Agent
+          </button>
+          <button
+            className={`result-tab ${activeTab === "deps" ? "active" : ""}`}
+            onClick={() => setActiveTab("deps")}
+          >
+            📦 Dependency Risk
+          </button>
+          <button
+            className={`result-tab ${activeTab === "quest" ? "active" : ""}`}
+            onClick={() => setActiveTab("quest")}
+          >
+            🎮 Quest
+          </button>
         </div>
 
         {/* Tab content */}
         {activeTab === "review" && (
-          <ReviewResult result={result} mode={mode} />
+          <ReviewResult result={result} mode={mode} originalCode={code} />
         )}
         {activeTab === "chat" && (
           <CodeChat code={code} language={language} reviewResult={result} />
         )}
         {activeTab === "security" && (
           <SecurityScanner code={code} language={language} />
+        )}
+        {activeTab === "tests" && (
+          <TestGenerator code={code} language={language} />
+        )}
+        {activeTab === "pr" && (
+          <PRReviewer />
+        )}
+        {activeTab === "deps" && (
+          <DependencyRisk />
+        )}
+        {activeTab === "quest" && (
+          <QuestMode code={code} language={language} />
         )}
       </div>
 
