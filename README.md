@@ -254,8 +254,7 @@ npm test
 
 ## 👨‍💻 Authors
 
-- Harsh Jaiswal
-- Krishna Garg
+- Harsh Jaiswal 
 
 ## 📄 License
 
